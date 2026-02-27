@@ -1,0 +1,83 @@
+CREATE DATABASE company;
+USE company;
+
+
+CREATE TABLE regions (region_id INT PRIMARY KEY,region_name VARCHAR(50) NOT NULL);
+
+CREATE TABLE countries (country_id VARCHAR(5) PRIMARY KEY,country_name VARCHAR(50) NOT NULL,region_id INT,FOREIGN KEY (region_id) 
+REFERENCES regions(region_id));
+
+CREATE TABLE locations (location_id INT PRIMARY KEY,street_address VARCHAR(100),postal_code VARCHAR(20),city VARCHAR(50),
+state_province VARCHAR(50),country_id VARCHAR(5),FOREIGN KEY (country_id) REFERENCES countries(country_id));
+
+CREATE TABLE departments (dept_id INT PRIMARY KEY,dept_name VARCHAR(50) NOT NULL,location_id INT,FOREIGN KEY (location_id) REFERENCES locations(location_id));
+
+CREATE TABLE employees (employee_id INT PRIMARY KEY,first_name VARCHAR(50),last_name VARCHAR(50),email VARCHAR(100),
+phone_no VARCHAR(20),hire_date DATE,job_id VARCHAR(10),salary DECIMAL(10, 2),manager_id INT,dept_id INT,FOREIGN KEY (manager_id) 
+REFERENCES employees(employee_id),FOREIGN KEY (dept_id) REFERENCES departments(dept_id));
+
+CREATE TABLE dependents (dependent_id INT PRIMARY KEY,first_name VARCHAR(50),last_name VARCHAR(30),relationship VARCHAR(30),employee_id INT,
+FOREIGN KEY (employee_id) REFERENCES employees(employee_id));
+
+INSERT INTO regions VALUES (1, 'Asia'),(2, 'Europe');
+
+INSERT INTO countries VALUES ('IN', 'India', 1),('UK', 'United Kingdom', 2);
+
+INSERT INTO locations VALUES (1700, 'MG Road', '56000', 'Bangalore', 'Karnataka', 'IN'),(1800, 'Oxford Street', 'W1', 'London', 'London', 'UK');
+
+INSERT INTO departments VALUES (1, 'IT', 1700),(2, 'HR', 1700),(3, 'Finance', 1800),(4, 'Marketing', 1800);
+
+
+INSERT INTO job VALUES ('it_prog', 'Programmer', 5000, 20000),('hr_rep', 'HR Representative', 4000, 15000),
+('fin_acc', 'Accountant', 6000, 18000),('mkt_man', 'Marketing Manager', 8000, 25000);
+
+INSERT INTO employees VALUES (101, 'Rahul', 'Sharma', 'rahul@gmail.com', 999991, '2022-01-10', 'it_prog', 15000, NULL, 1),
+(102, 'Aish', 'Khan', 'aish@gmail.com', 999992, '2021-01-12', 'hr_rep', 9000, 101, 2),
+(103, 'John', 'Smith', 'john2@gmail.com', 999993, '2020-03-15', 'fin_acc', 12000, 101, 3),
+(104, 'Priya', 'Nair', 'priya@gmail.com', 999994, '2023-04-18', 'it_prog', 7000, 101, 1),
+(105, 'David', 'Brown', 'david@gmail.com', 999995, '2022-05-20', 'mkt_man', 22000, 103, 4);
+
+INSERT INTO dependents VALUES (1, 'Anu', 'Sharma', 'Daughter', 101),(2, 'Sara', 'Khan', 'Wife', 102);
+
+
+SELECT first_name, last_name FROM employees JOIN departments USING (dept_id) WHERE location_id = 1700;
+
+SELECT first_name, last_name FROM employees JOIN departments USING (dept_id) WHERE location_id <> 1700;
+
+SELECT * FROM employees WHERE salary = (SELECT MAX(salary) FROM employees);
+
+SELECT * FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);
+
+SELECT DISTINCT dept_id, dept_name FROM departments JOIN employees USING (dept_id) WHERE salary > 1000;
+
+SELECT dept_id, dept_name FROM departments WHERE dept_id NOT IN (SELECT dept_id FROM employees WHERE salary > 1000);
+
+SELECT * FROM employees WHERE salary > ALL (SELECT MIN(salary) FROM employees GROUP BY dept_id);
+
+SELECT * FROM employees WHERE salary >= ALL (SELECT MAX(salary) FROM employees GROUP BY dept_id);
+
+SELECT AVG(avg_salary) FROM (SELECT AVG(salary) AS avg_salary FROM employees GROUP BY dept_id) AS dept_avg;
+
+SELECT first_name, salary, (SELECT AVG(salary) FROM employees) AS avg_salary, salary - (SELECT AVG(salary) FROM employees) AS difference FROM employees;
+
+SELECT * FROM employees e WHERE salary > (SELECT AVG(salary) FROM employees WHERE dept_id = e.dept_id);
+
+
+SELECT * FROM employees e WHERE NOT EXISTS (SELECT * FROM dependents d WHERE d.employee_id = e.employee_id);
+
+SELECT e.first_name,e.last_name,d.department_name FROM employees e JOIN departments d ON e.department_id = d.department_id WHERE e.department_id IN (1,2,3);
+
+SELECT e.first_name,e.last_name,j.job_title,d.department_name FROM employees e JOIN jobs j ON e.job_id = j.job_id JOIN departments d ON e.department_id = d.department_id WHERE e.department_id IN (1, 2, 3) AND e.salary > 100000;
+
+SELECT d.department_name,l.street_address,l.postal_code,c.country_name,r.region_name FROM departments d JOIN locations l ON d.location_id = l.location_id JOIN countries c ON l.country_id = c.country_id JOIN regions r ON c.region_id = r.region_id;
+
+SELECT e.first_name, e.last_name, e.department_id, d.department_name
+FROM employees e LEFT JOIN departments d ON e.department_id = d.department_id; 
+
+
+
+
+
+SELECT e.first_name, e.last_name, d.department_name, l.city, l.state_province FROM employees e JOIN departments d ON e.department_id = d.department_id JOIN locations l ON d.location_id = l.location_id WHERE e.first_name LIKE '%z%';
+
+
